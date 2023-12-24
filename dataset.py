@@ -14,12 +14,14 @@ from config import *
 import csv
 
 def get_files(path, extention):
+    rel_files = []
     files = []
     common_directory = r'US_RAVDESS/'
     for root, dirNames, fileNames in os.walk(path):
         for fileName in fnmatch.filter(fileNames, '*' + extention):
-            files.append(os.path.join(common_directory, fileName))
-    return files
+            rel_files.append(os.path.join(common_directory, fileName))
+            files.append(os.path.join(root, fileName))
+    return rel_files, files
 
 
 def get_labels():
@@ -45,26 +47,13 @@ def load_data(path, extention='.wav'):
         quit()
     else:
         # Retrieve all files in chosen path with the specific extension 
-        audios_path = get_files(path, extention)      
+        rel_audios_path, audios_path = get_files(path, extention)      
         
         # Get labels from csv file
         labels_dict = get_labels()
                 
         # Get the file name as its label
-        labels = [labels_dict[path] for path in audios_path]
-        
-        file_name = "my_list.txt"
-        with open(file_name, "w") as file:
-            # Iterate through the list and write each item to a new line
-            for item in labels:
-                file.write(item + "\n")
-                
-        audios_path = [BASE_DIR + path for path in audios_path]
-        file_name = "audio_path.txt"
-        with open(file_name, "w") as file:
-            # Iterate through the list and write each item to a new line
-            for item in audios_path:
-                file.write(item + "\n")
+        labels = [labels_dict[path] for path in rel_audios_path]
                 
         if len(audios_path) == 0:
             print('There is no sample in dataset')
