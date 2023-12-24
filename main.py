@@ -2,7 +2,6 @@
 from transformers import Wav2Vec2FeatureExtractor
 from model import get_model
 from dataset import load_data , split_data , get_data_loaders
-from utils import data_distribution
 import torch
 from torch import nn
 import numpy as np
@@ -10,6 +9,7 @@ import random
 from config import *
 from sklearn.utils import class_weight
 from sklearn.metrics import accuracy_score
+from utils import *
 
 
 def get_classes_weight(labels):
