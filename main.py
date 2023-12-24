@@ -8,6 +8,8 @@ from torch import nn
 import numpy as np
 import random
 from config import *
+from sklearn.utils import class_weight
+from sklearn.metrics import accuracy_score
 
 
 def get_classes_weight(labels):
@@ -142,6 +144,7 @@ def trainModel(data_path, check_point, lr, epocks, weight_decay, sch_gamma, sch_
 
 
 if __name__ == '__main__':
+    print("Main program")
     random_seed=3 
     torch.manual_seed(random_seed)
     random.seed(random_seed)
