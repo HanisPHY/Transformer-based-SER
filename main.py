@@ -131,12 +131,13 @@ def trainModel(data_path, check_point, lr, epocks, weight_decay, sch_gamma, sch_
         acc_list.append(val_acc)
         if val_acc > best_acc:
             best_acc = val_acc
-            torch.save(model, 'best-model.pt')
+            torch.save(model.state_dict(), 'best-model.pt')
         # print(f'\tTrain -> Loss = {train_loss:.4f} /  accuracy = {trian_acc:.4f}')
         # print(f'\tValidation -> Loss = {val_loss:.4f} /  accuracy = {val_acc:.4f}')
         plot_training(np.array(loss_list), np.array(acc_list), title)
 
-    best_model = torch.load('best-model.pt')
+    model = get_model(check_point, num_classes, device)
+    best_model = model.load_state_dict(torch.load('best-model.pt'))
     test_loss, test_acc, test_preds, test_labels = evaluate(best_model, val_dataloader , criterion, device)
     print('-' * 30, '\nBest model on validation set -> Loss =', test_loss, f'Accuracy = {test_acc * 100:.2f} %')
     report(test_labels, test_preds, label_encoder)
