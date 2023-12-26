@@ -67,7 +67,7 @@ def load_data(path, extention='.wav'):
             return df, le
 
 
-def split_data(dataframe, train_size=0.85, stratify=None):
+def split_data(dataframe, train_size=0.8, stratify=None):
     train_data, val_data = train_test_split(dataframe, train_size = train_size, stratify = stratify, shuffle=True  )
     return train_data, val_data
 
@@ -106,9 +106,10 @@ def collate_fn_padd(batch , feature_extractor):
 
 
 
-def get_data_loaders(train_data, val_data , train_bs  , fe):
+def get_data_loaders(train_data, val_data, test_data, train_bs  , fe):
     collate_fn = lambda batch: collate_fn_padd(batch, feature_extractor = fe )
     train_dl = DataLoader(SpeechDataset(train_data , fe ) , batch_size = train_bs, collate_fn = collate_fn, shuffle=True)
     val_dl = DataLoader(SpeechDataset(val_data , fe ) , batch_size = 2, collate_fn = collate_fn, shuffle=True)
+    test_dl = DataLoader(SpeechDataset(test_data , fe ) , batch_size = 2, collate_fn = collate_fn, shuffle=True)
     
-    return train_dl, val_dl
+    return train_dl, val_dl, test_dl

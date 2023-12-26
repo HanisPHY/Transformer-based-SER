@@ -93,17 +93,20 @@ def trainModel(data_path, check_point, lr, epocks, weight_decay, sch_gamma, sch_
     # Plot data distribution
     if plot_data_dist : data_distribution(df, label_encoder.classes_)
 
-    # Split data to trian and validation sets
-    train_data, val_data = split_data(df, stratify = df['label'])
+    # Split data to train, validation, and test sets
+    train_data, test_data = split_data(df, stratify = df['label'])
+    train_data, val_data = split_data(train_data, stratify = train_data['label'])
+    
     print('Number of train samples =', len(train_data) )
-    print('Number of test samples =', len(val_data) ) ; print('-' * 50)
+    print('Number of validation samples =', len(val_data) )
+    print('Number of test samples =', len(test_data) ) ; print('-' * 50)
 
     print('Loading FeatureExtractor ...', end ='')
     feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained(check_point)
     print('\rFeatureExtractor loaded successfully') ; print('-' * 50)
 
     # Create data loaders
-    train_dataloader, val_dataloader = get_data_loaders(train_data , val_data , train_bs, feature_extractor)
+    train_dataloader, val_dataloader, test_dataloader = get_data_loaders(train_data , val_data, test_data, train_bs, feature_extractor)
     print('Number of train batches =', len(train_dataloader))
     print('Number of validaion batches =', len(val_dataloader) ) ; print('-' * 50)
 
@@ -138,7 +141,7 @@ def trainModel(data_path, check_point, lr, epocks, weight_decay, sch_gamma, sch_
 
     model = get_model(check_point, num_classes, device)
     best_model = model.load_state_dict(torch.load('best-model.pt'))
-    test_loss, test_acc, test_preds, test_labels = evaluate(best_model, val_dataloader , criterion, device)
+    test_loss, test_acc, test_preds, test_labels = evaluate(best_model, test_dataloader , criterion, device)
     print('-' * 30, '\nBest model on validation set -> Loss =', test_loss, f'Accuracy = {test_acc * 100:.2f} %')
     report(test_labels, test_preds, label_encoder)
 
