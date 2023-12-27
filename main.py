@@ -166,7 +166,7 @@ def trainModel(data_path, check_point, lr, epocks, weight_decay, sch_gamma, sch_
     model = get_model(check_point, num_classes, device)
     model.load_state_dict(torch.load('best-model.pt'))
     test_loss, test_acc, test_preds, test_labels = evaluate(model, test_dataloader , criterion, device)
-    print('-' * 30, '\nBest model on validation set -> Loss =', test_loss, f'Accuracy = {test_acc * 100:.2f} %')
+    print('-' * 30, '\nBest model on test set -> Loss =', test_loss, f'Accuracy = {test_acc * 100:.2f} %')
     report(test_labels, test_preds, label_encoder)
 
 

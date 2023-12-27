@@ -16,7 +16,7 @@ import csv
 def get_files(path, extention):
     rel_files = []
     files = []
-    common_directory = r'US_RAVDESS/'
+    common_directory = r'German_EmoDB/'
     for root, dirNames, fileNames in os.walk(path):
         for fileName in fnmatch.filter(fileNames, '*' + extention):
             rel_files.append(os.path.join(common_directory, fileName))
@@ -26,7 +26,7 @@ def get_files(path, extention):
 
 def get_labels():
     labels = {}  # Dictionary to store labels (filename -> label)
-    AREA = "US_RAVDESS"
+    AREA = "German_EmoDB"
 
     with open(LABEL_CSV, newline='') as csvfile:
         csvreader = csv.reader(csvfile)
