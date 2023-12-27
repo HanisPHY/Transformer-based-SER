@@ -108,8 +108,8 @@ def collate_fn_padd(batch , feature_extractor):
 
 def get_data_loaders(train_data, val_data, test_data, train_bs  , fe):
     collate_fn = lambda batch: collate_fn_padd(batch, feature_extractor = fe )
-    train_dl = DataLoader(SpeechDataset(train_data , fe ) , batch_size = train_bs, collate_fn = collate_fn, shuffle=True)
-    val_dl = DataLoader(SpeechDataset(val_data , fe ) , batch_size = 2, collate_fn = collate_fn, shuffle=True)
-    test_dl = DataLoader(SpeechDataset(test_data , fe ) , batch_size = 2, collate_fn = collate_fn, shuffle=True)
+    train_dl = DataLoader(SpeechDataset(train_data , fe ) , batch_size = train_bs, collate_fn = collate_fn, shuffle=True, drop_last=True)
+    val_dl = DataLoader(SpeechDataset(val_data , fe ) , batch_size = 2, collate_fn = collate_fn, shuffle=True, drop_last=True)
+    test_dl = DataLoader(SpeechDataset(test_data , fe ) , batch_size = 2, collate_fn = collate_fn, shuffle=True, drop_last=True)
     
     return train_dl, val_dl, test_dl

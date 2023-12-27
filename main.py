@@ -87,6 +87,12 @@ def trainModel(data_path, check_point, lr, epocks, weight_decay, sch_gamma, sch_
 
     # load data
     df, label_encoder = load_data(data_path)
+    print(df)
+    
+    class_distribution = df['label'].value_counts()
+    print("Class distribution in the full dataset:")
+    print(class_distribution)
+
     num_classes = len(label_encoder.classes_)
     print('Data loaded successfully') ; print('-' * 50)
 
@@ -94,8 +100,26 @@ def trainModel(data_path, check_point, lr, epocks, weight_decay, sch_gamma, sch_
     if plot_data_dist : data_distribution(df, label_encoder.classes_)
 
     # Split data to train, validation, and test sets
-    train_data, test_data = split_data(df, stratify = df['label'])
-    train_data, val_data = split_data(train_data, stratify = train_data['label'])
+    train_val_data, test_data = split_data(df, stratify = df['label'])
+    print('-' * 50)
+    class_distribution = train_val_data['label'].value_counts()
+    print("Class distribution in the train_val_data:")
+    print(class_distribution)
+
+    class_distribution = test_data['label'].value_counts()
+    print("Class distribution in the test_data:")
+    print(class_distribution)
+    print('-' * 50)
+    train_data, val_data = split_data(train_val_data, stratify = train_val_data['label'])
+    
+    class_distribution = train_data['label'].value_counts()
+    print("Class distribution in the train_data:")
+    print(class_distribution)
+    
+    class_distribution = val_data['label'].value_counts()
+    print("Class distribution in the val_data:")
+    print(class_distribution)
+    print('-' * 50)
     
     print('Number of train samples =', len(train_data) )
     print('Number of validation samples =', len(val_data) )
@@ -140,8 +164,8 @@ def trainModel(data_path, check_point, lr, epocks, weight_decay, sch_gamma, sch_
         plot_training(np.array(loss_list), np.array(acc_list), title)
 
     model = get_model(check_point, num_classes, device)
-    best_model = model.load_state_dict(torch.load('best-model.pt'))
-    test_loss, test_acc, test_preds, test_labels = evaluate(best_model, test_dataloader , criterion, device)
+    model.load_state_dict(torch.load('best-model.pt'))
+    test_loss, test_acc, test_preds, test_labels = evaluate(model, test_dataloader , criterion, device)
     print('-' * 30, '\nBest model on validation set -> Loss =', test_loss, f'Accuracy = {test_acc * 100:.2f} %')
     report(test_labels, test_preds, label_encoder)
 

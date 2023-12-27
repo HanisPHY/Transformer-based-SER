@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.metrics import f1_score, classification_report
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 from sklearn.metrics import accuracy_score
 
 
@@ -68,6 +68,14 @@ def report(labels, preds, encoder):
 
 
 def plot_cnf_matrix(cm , classes):
+    print("confusion matrix:")
+    print(cm)
+    cm_display = ConfusionMatrixDisplay(cm, display_labels=classes)
+    cm_display.plot()
+    plt.xticks(rotation=45, ha='right')
+    plt.show()
+    
     cm_df = pd.DataFrame(cm,classes,classes)                      
     plt.figure(figsize=(10,10))  
     sns.heatmap(cm_df , annot=True , cmap='Blues', fmt='g')
+    plt.show()
