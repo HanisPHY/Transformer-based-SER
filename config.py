@@ -4,7 +4,7 @@
 DATASET_PATH = 'E:/school/Research/Emotion recognition/German_EmoDB/German_EmoDB'
 LABEL_CSV = 'e:/school/Research/Emotion recognition/label.csv'
 # DATASET_PATH = '/content/drive/MyDrive/content/US_RAVDESS/US_RAVDESS'
-# DATASET_PATH = '/content/drive/MyDrive/content/German_EmoDB/German_EmoDB'
+# DATASET_PATH = '/content/drive/MyDrive/content/German_EmoDB'
 # LABEL_CSV = '/content/drive/MyDrive/content/US_RAVDESS/label.csv'
 HUBERT = "facebook/hubert-base-ls960"
 DISTIL_HUBERT = "ntu-spml/distilhubert"
