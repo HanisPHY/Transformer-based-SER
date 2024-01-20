@@ -83,6 +83,7 @@ class SpeechDataset(Dataset):
         label = self.data.label.values[item]
         speech = self.file_to_array(path, self.tsr)
         input = self.feature_extractor(speech , sampling_rate = self.tsr).input_values[0]
+        print("The shape of the extracted input is: ", input.shape)
         return input, label
 
     def file_to_array(self, path, sampling_rate):

@@ -41,6 +41,7 @@ def train(model, dataloader, optimizer, criterion, epoch, device):
 
 
         inputs = inputs.to(device)
+        print("Train: The shape of the raw input is: ", inputs.shape)
         labels = labels.to(device)
         
         outputs = model(inputs)
@@ -50,7 +51,6 @@ def train(model, dataloader, optimizer, criterion, epoch, device):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-
 
         # Collect predictions and true labels
         predictions, true_labels = collect(outputs, labels, predictions, true_labels)
@@ -64,20 +64,23 @@ def train(model, dataloader, optimizer, criterion, epoch, device):
 def evaluate(model, dataloader, criterion, device):
     # put the model on evaluation mode
     model.eval()
+    attenWeights = []
     losses, predictions, true_labels = [], [], []
 
     for iter, (inputs, labels) in enumerate(dataloader):
         inputs = inputs.to(device)
+        print("Evaluation: The shape of the raw input is: ", inputs.shape)
         labels = labels.to(device)
 
         outputs = model(inputs)
+        
         loss = criterion(outputs, labels)
         losses.append(loss.item())
 
         # Collect predictions and true labels
         predictions, true_labels = collect(outputs, labels, predictions, true_labels)
 
-    return np.mean(losses), accuracy_score(true_labels, predictions) , predictions , true_labels
+    return np.mean(losses), accuracy_score(true_labels, predictions) , predictions , true_labels, attenWeights
 
 
 
@@ -127,6 +130,8 @@ def trainModel(data_path, check_point, lr, epocks, weight_decay, sch_gamma, sch_
 
     print('Loading FeatureExtractor ...', end ='')
     feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained(check_point)
+    # print out the input shape of the model (the extracted features, the output of Wav2Vec2FeatureExtractor)
+    print('Input shape of the model =', feature_extractor.sampling_rate, 'samples') ; print('-' * 50)
     print('\rFeatureExtractor loaded successfully') ; print('-' * 50)
 
     # Create data loaders
@@ -151,7 +156,7 @@ def trainModel(data_path, check_point, lr, epocks, weight_decay, sch_gamma, sch_
     print('Start Training ....',  end ='' )
     best_acc = 0 ; loss_list, acc_list = [], []
     for epock in range(epocks):
-        train_loss, trian_acc , _ , _ = train(model, train_dataloader, optimizer, criterion, epock, device)
+        train_loss, trian_acc , _ , _, inputWeights = train(model, train_dataloader, optimizer, criterion, epock, device)
         val_loss , val_acc , _ , _ = evaluate(model, val_dataloader, criterion, device)
         # scheduler.step()
         loss_list.append([train_loss, val_loss])
@@ -165,7 +170,7 @@ def trainModel(data_path, check_point, lr, epocks, weight_decay, sch_gamma, sch_
 
     model = get_model(check_point, num_classes, device)
     model.load_state_dict(torch.load('best-model.pt'))
-    test_loss, test_acc, test_preds, test_labels = evaluate(model, test_dataloader , criterion, device)
+    test_loss, test_acc, test_preds, test_labels, input_weights = evaluate(model, test_dataloader , criterion, device)
     print('-' * 30, '\nBest model on test set -> Loss =', test_loss, f'Accuracy = {test_acc * 100:.2f} %')
     report(test_labels, test_preds, label_encoder)
 
