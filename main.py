@@ -46,10 +46,10 @@ def train(model, dataloader, optimizer, criterion, epoch, device):
 
 
         inputs = inputs.to(device)
-        print("Train: The shape of the raw input is: ", inputs.shape)
+        # print("Train: The shape of the raw input is: ", inputs.shape)
         labels = labels.to(device)
         
-        outputs = model(inputs)
+        outputs, _ = model(inputs)
         loss = criterion(outputs, labels)
         losses.append(loss.item())
         
@@ -73,7 +73,7 @@ def evaluate(model, dataloader, criterion, device, output_attention=False):
 
     for iter, (inputs, labels) in enumerate(dataloader):
         inputs = inputs.to(device)
-        print("Evaluation: The shape of the raw input is: ", inputs.shape)
+        # print("Evaluation: The shape of the raw input is: ", inputs.shape)
         labels = labels.to(device)
 
         outputs, atten_weight = model(inputs, output_attention=output_attention)
