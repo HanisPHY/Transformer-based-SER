@@ -1,3 +1,4 @@
+from collections import defaultdict
 import matplotlib.pyplot as plt
 from IPython.display import clear_output
 import seaborn as sns
@@ -66,6 +67,42 @@ def report(labels, preds, encoder):
     print(classification_report(labels, preds, labels = encoder.classes_))
     plot_cnf_matrix(cm , encoder.classes_)
 
+    
+# attention_weights: list of attention weights for each sample
+
+# attentions (tuple(torch.FloatTensor):  each item in the attention_weights
+# Tuple of torch.FloatTensor (one for each layer) of shape (batch_size, num_heads, sequence_length, sequence_length).
+def plotAttention(attention_weights, labels, encoder):
+    # Average attention weights for each class
+    avg_attention_weights = {}
+    label_cnt = defaultdict(int)
+    labels = encoder.inverse_transform(labels)
+    for i, label in enumerate(labels):
+        label_cnt[label] += 1
+        label_attention = attention_weights[i]
+        
+        if avg_attention_weights.get(label) is None:
+            avg_attention_weights[label] = np.array(np.zeros(label_attention[0][0].shape))
+        
+        for j in range(len(label_attention)):
+            for k in range(len(label_attention[j])):
+                avg_attention_weights[label] += label_attention[j][k].detach().numpy()
+                
+    for key in label_cnt:
+        avg_attention_weights[key] /= label_cnt[key]
+        
+    # visualize avg_attention_weights for each class
+    plt.figure(figsize=(5, 5 * len(avg_attention_weights)))
+
+    cnt = 1
+    for key in avg_attention_weights:
+        ax = plt.subplot(len(avg_attention_weights), 1, cnt)
+        sns.heatmap(avg_attention_weights[key], cmap='Blues', ax=ax)
+        ax.set_title(key)
+        cnt += 1
+
+    plt.tight_layout()
+    plt.show()
 
 def plot_cnf_matrix(cm , classes):
     print("confusion matrix:")

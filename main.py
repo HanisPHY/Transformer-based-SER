@@ -19,17 +19,22 @@ def get_classes_weight(labels):
     return torch.tensor(classes_weight, dtype=torch.float)
 
 
-def collect(outputs, labels, predictions, true_labels):
+def collect(outputs, labels, predictions, true_labels, attention = False, attention_weights = [], output_atten_weight = []):
     preds = torch.argmax(outputs, dim=1).cpu().numpy()
     labels = labels.cpu().numpy()
     if len(predictions) == 0:
         predictions = preds
         true_labels = labels
+        if attention:
+            attention_weights = output_atten_weight.cpu().numpy()
     else:
         predictions = np.concatenate((predictions, preds))
         true_labels = np.concatenate((true_labels, labels))
+        
+        if attention:
+            attention_weights = np.concatenate((attention_weights, output_atten_weight.cpu().numpy()))
 
-    return predictions, true_labels
+    return predictions, true_labels, attention_weights
 
 
 def train(model, dataloader, optimizer, criterion, epoch, device):
@@ -53,7 +58,7 @@ def train(model, dataloader, optimizer, criterion, epoch, device):
         optimizer.step()
 
         # Collect predictions and true labels
-        predictions, true_labels = collect(outputs, labels, predictions, true_labels)
+        predictions, true_labels, _ = collect(outputs, labels, predictions, true_labels, attention=False)
 
         if iter % round((len(dataloader) / 5)) == 0:
             print(f'\r[Epoch][Batch] = [{epoch + 1}][{iter}] -> Loss = {np.mean(losses):.4f} ')
@@ -61,26 +66,25 @@ def train(model, dataloader, optimizer, criterion, epoch, device):
     return np.mean(losses), accuracy_score(true_labels, predictions), predictions , true_labels
 
 
-def evaluate(model, dataloader, criterion, device):
+def evaluate(model, dataloader, criterion, device, output_attention=False):
     # put the model on evaluation mode
     model.eval()
-    attenWeights = []
-    losses, predictions, true_labels = [], [], []
+    losses, predictions, true_labels, attention_weights = [], [], [], []
 
     for iter, (inputs, labels) in enumerate(dataloader):
         inputs = inputs.to(device)
         print("Evaluation: The shape of the raw input is: ", inputs.shape)
         labels = labels.to(device)
 
-        outputs = model(inputs)
+        outputs, atten_weight = model(inputs, output_attention=output_attention)
         
         loss = criterion(outputs, labels)
         losses.append(loss.item())
 
         # Collect predictions and true labels
-        predictions, true_labels = collect(outputs, labels, predictions, true_labels)
+        predictions, true_labels, attention_weights = collect(outputs, labels, predictions, true_labels, attention=True, attention_weights=attention_weights, output_atten_weight=atten_weight)
 
-    return np.mean(losses), accuracy_score(true_labels, predictions) , predictions , true_labels, attenWeights
+    return np.mean(losses), accuracy_score(true_labels, predictions) , predictions , true_labels, attention_weights
 
 
 
@@ -157,7 +161,7 @@ def trainModel(data_path, check_point, lr, epocks, weight_decay, sch_gamma, sch_
     best_acc = 0 ; loss_list, acc_list = [], []
     for epock in range(epocks):
         train_loss, trian_acc , _ , _, inputWeights = train(model, train_dataloader, optimizer, criterion, epock, device)
-        val_loss , val_acc , _ , _ = evaluate(model, val_dataloader, criterion, device)
+        val_loss , val_acc , _ , _, _ = evaluate(model, val_dataloader, criterion, device)
         # scheduler.step()
         loss_list.append([train_loss, val_loss])
         acc_list.append(val_acc)
@@ -170,8 +174,10 @@ def trainModel(data_path, check_point, lr, epocks, weight_decay, sch_gamma, sch_
 
     model = get_model(check_point, num_classes, device)
     model.load_state_dict(torch.load('best-model.pt'))
-    test_loss, test_acc, test_preds, test_labels, input_weights = evaluate(model, test_dataloader , criterion, device)
+    test_loss, test_acc, test_preds, test_labels, attention_weights = evaluate(model, test_dataloader , criterion, device, output_attention=True)
     print('-' * 30, '\nBest model on test set -> Loss =', test_loss, f'Accuracy = {test_acc * 100:.2f} %')
+    
+    plotAttention(attention_weights, test_labels, label_encoder)
     report(test_labels, test_preds, label_encoder)
 
 

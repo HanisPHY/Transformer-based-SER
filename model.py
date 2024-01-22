@@ -19,8 +19,10 @@ class ModelForClf(nn.Module):
     def merge(self, hidden_states):
         return torch.mean(hidden_states, dim=1)
 
-    def forward(self, input_values, attention_mask=None):
-        x = self.hubert(input_values, attention_mask=attention_mask).last_hidden_state
+    def forward(self, input_values, attention_mask=None, output_attention=False):
+        attention_weight = None
+        outputs = self.hubert(input_values, attention_mask=attention_mask, output_attentions=output_attention)
+        x = outputs.last_hidden_state
         # x = self.transformer_model(input_values, attention_mask=attention_mask , output_hidden_states =True).hidden_states[12]
 
         # run the code below to : create a single vector as the representation 
@@ -35,7 +37,11 @@ class ModelForClf(nn.Module):
         x = self.projector(x)
         x = torch.tanh(x)
         logits = self.classifier(x)
-        return logits
+        
+        if output_attention:
+            attention_weight = outputs.attentions
+        
+        return logits, attention_weight
 
 
 
