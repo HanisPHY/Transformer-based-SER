@@ -25,14 +25,17 @@ def collect(outputs, labels, predictions, true_labels, attention = False, attent
     if len(predictions) == 0:
         predictions = preds
         true_labels = labels
-        if attention:
-            attention_weights = output_atten_weight.cpu().numpy()
+        if attention and output_atten_weight is not None:
+            # Convert the tuple of torch into the list of numpy
+            # Use detach().numpy() to avoid require_grad error
+            attention_weights = np.array([t.cpu().detach().numpy() for t in output_atten_weight])
     else:
         predictions = np.concatenate((predictions, preds))
         true_labels = np.concatenate((true_labels, labels))
         
-        if attention:
-            attention_weights = np.concatenate((attention_weights, output_atten_weight.cpu().numpy()))
+        if attention and output_atten_weight is not None:
+            attention_weight_list = [t.cpu().detach().numpy() for t in output_atten_weight]
+            attention_weights = np.concatenate((attention_weights, np.array(attention_weight_list)))
 
     return predictions, true_labels, attention_weights
 
@@ -77,6 +80,7 @@ def evaluate(model, dataloader, criterion, device, output_attention=False):
         labels = labels.to(device)
 
         outputs, atten_weight = model(inputs, output_attention=output_attention)
+        # print("atten_weight: ", atten_weight)
         
         loss = criterion(outputs, labels)
         losses.append(loss.item())
@@ -160,7 +164,7 @@ def trainModel(data_path, check_point, lr, epocks, weight_decay, sch_gamma, sch_
     print('Start Training ....',  end ='' )
     best_acc = 0 ; loss_list, acc_list = [], []
     for epock in range(epocks):
-        train_loss, trian_acc , _ , _, inputWeights = train(model, train_dataloader, optimizer, criterion, epock, device)
+        train_loss, trian_acc , _ , _ = train(model, train_dataloader, optimizer, criterion, epock, device)
         val_loss , val_acc , _ , _, _ = evaluate(model, val_dataloader, criterion, device)
         # scheduler.step()
         loss_list.append([train_loss, val_loss])
@@ -183,6 +187,9 @@ def trainModel(data_path, check_point, lr, epocks, weight_decay, sch_gamma, sch_
 
 
 if __name__ == '__main__':
+    print("EPOCHS is: ", EPOCHS)
+    print("Debugging") if EPOCHS < 10 else print("Training")
+    print("-" * 50)
     print("Main program")
     random_seed=3 
     torch.manual_seed(random_seed)

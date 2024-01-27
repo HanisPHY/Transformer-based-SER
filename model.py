@@ -19,6 +19,7 @@ class ModelForClf(nn.Module):
     def merge(self, hidden_states):
         return torch.mean(hidden_states, dim=1)
 
+    # attention_weight: Have value None if output_attention is False
     def forward(self, input_values, attention_mask=None, output_attention=False):
         attention_weight = None
         outputs = self.hubert(input_values, attention_mask=attention_mask, output_attentions=output_attention)
