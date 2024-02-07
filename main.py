@@ -28,14 +28,14 @@ def collect(outputs, labels, predictions, true_labels, attention = False, attent
         if attention and output_atten_weight is not None:
             # Convert the tuple of torch into the list of numpy
             # Use detach().numpy() to avoid require_grad error
-            attention_weights = np.array([t.cpu().detach().numpy() for t in output_atten_weight])
+            attention_weights = [np.array([t.cpu().detach().numpy() for t in output_atten_weight])]
     else:
         predictions = np.concatenate((predictions, preds))
         true_labels = np.concatenate((true_labels, labels))
         
         if attention and output_atten_weight is not None:
             attention_weight_list = [t.cpu().detach().numpy() for t in output_atten_weight]
-            attention_weights = np.concatenate((attention_weights, np.array(attention_weight_list)))
+            attention_weights.append(np.array(attention_weight_list))
 
     return predictions, true_labels, attention_weights
 

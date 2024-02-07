@@ -41,8 +41,8 @@ import torch
 #     return avg_attention_weights
 
 def plotAttention(attention_weights, labels):
-    # Maximum attention map size
-    max_seq_length = max(att.size(2) for batch in attention_weights for att in batch)
+    # Maximum attention map size            
+    max_seq_length = max([att.shape[2] for batch in attention_weights for att in batch])
 
     sum_attention_maps = defaultdict(lambda: np.zeros((max_seq_length, max_seq_length)))
     count_attention_maps = defaultdict(int)

@@ -75,35 +75,41 @@ def report(labels, preds, encoder):
 def plotAttention(attention_weights, labels, encoder):
     labels = encoder.inverse_transform(labels)
     # Maximum attention map size
-    max_seq_length = max(att.size(2) for batch in attention_weights for att in batch)
+    max_seq_length = max(att.shape[2] for batch in attention_weights for att in batch)
 
     sum_attention_maps = defaultdict(lambda: np.zeros((max_seq_length, max_seq_length)))
     count_attention_maps = defaultdict(int)
 
-    # Each head has an attention map
-    for i, (label, batch_attention) in enumerate(zip(labels, attention_weights)):
-        for attention_map in batch_attention:
-            for head_attention in attention_map:
-                seq_length = head_attention.shape[-1]
-                
-                padded_attention = np.zeros((max_seq_length, max_seq_length))
-                padded_attention[:seq_length, :seq_length] = head_attention.cpu().detach().numpy()
-                
-                sum_attention_maps[label] += padded_attention
-                count_attention_maps[label] += 1
+    # (batch_size, num_heads, sequence_length, sequence_length)
+    for i, (label, attentions) in enumerate(zip(labels, attention_weights)):
+        for batch_attention in attentions:
+            for head_attention in batch_attention:
+                for att in head_attention:
+                    seq_length = att.shape[-1]
+                    
+                    padded_attention = np.zeros((max_seq_length, max_seq_length))
+                    
+                    padded_attention[:seq_length, :seq_length] = att
+                    
+                    sum_attention_maps[label] += padded_attention
+                    count_attention_maps[label] += 1
 
     avg_attention_weights = {label: sum_attention / count_attention_maps[label] for label, sum_attention in sum_attention_maps.items()}
     
     # visualize avg_attention_weights for each class
-    plt.figure(figsize=(5,5))  
-
-    cnt = 1
-    for key in avg_attention_weights:
-        ax = plt.subplot(len(avg_attention_weights), 1, cnt)
-        sns.heatmap(avg_attention_weights[key], cmap='Blues', ax=ax)
+    print("-" * 50, "Average attention heat map")
+    nrows = 4
+    ncols = 1
+    fig_width = 10
+    fig_height = nrows * 8
+    
+    fig, axs = plt.subplots(nrows, ncols, figsize=(fig_width, fig_height))
+    
+    for ax, (key, data) in zip(axs, avg_attention_weights.items()):
+        sns.heatmap(data, cmap='Blues', ax=ax)
         ax.set_title(key)
-        cnt += 1
 
+    plt.tight_layout()
     plt.show()
 
 def plot_cnf_matrix(cm , classes):
