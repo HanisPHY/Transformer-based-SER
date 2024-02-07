@@ -6,27 +6,63 @@ from collections import defaultdict
 import torch
 
 
-def plotAttention(attention_weights, labels):
-    # Average attention weights for each class
-    avg_attention_weights = {}
-    label_cnt = defaultdict(int)
-    for i, label in enumerate(labels):
-        label_cnt[label] += 1
-        label_attention = attention_weights[i]
+# def plotAttention(attention_weights, labels):
+#     # Average attention weights for each class
+#     avg_attention_weights = {}
+#     label_cnt = defaultdict(int)
+#     for i, label in enumerate(labels):
+#         label_cnt[label] += 1
+#         label_attention = attention_weights[i]
         
-        if avg_attention_weights.get(label) is None:
-            avg_attention_weights[label] = np.array(np.zeros(label_attention[0][0].shape))
+#         if avg_attention_weights.get(label) is None:
+#             avg_attention_weights[label] = np.array(np.zeros(label_attention[0][0].shape))
         
-        for j in range(len(label_attention)):
-            for k in range(len(label_attention[j])):
-                print("label_attention[j][k].detach().numpy(): ", j, k, label_attention[j][k].detach().numpy())
-                avg_attention_weights[label] += label_attention[j][k].detach().numpy()
+#         for j in range(len(label_attention)):
+#             for k in range(len(label_attention[j])):
+#                 print("label_attention[j][k].detach().numpy(): ", j, k, label_attention[j][k].detach().numpy())
+#                 avg_attention_weights[label] += label_attention[j][k].detach().numpy()
                 
-    for key in label_cnt:
-        avg_attention_weights[key] /= label_cnt[key]
+#     for key in label_cnt:
+#         avg_attention_weights[key] /= label_cnt[key]
         
+#     # visualize avg_attention_weights for each class
+#     plt.figure(figsize=(5, 5 * len(avg_attention_weights)))
+
+#     cnt = 1
+#     for key in avg_attention_weights:
+#         ax = plt.subplot(len(avg_attention_weights), 1, cnt)
+#         sns.heatmap(avg_attention_weights[key], cmap='Blues', ax=ax)
+#         ax.set_title(key)
+#         cnt += 1
+
+#     plt.tight_layout()
+#     plt.show()
+        
+#     return avg_attention_weights
+
+def plotAttention(attention_weights, labels):
+    # Maximum attention map size
+    max_seq_length = max(att.size(2) for batch in attention_weights for att in batch)
+
+    sum_attention_maps = defaultdict(lambda: np.zeros((max_seq_length, max_seq_length)))
+    count_attention_maps = defaultdict(int)
+
+    # Each head has an attention map
+    for i, (label, batch_attention) in enumerate(zip(labels, attention_weights)):
+        for attention_map in batch_attention:
+            for head_attention in attention_map:
+                seq_length = head_attention.shape[-1]
+                
+                padded_attention = np.zeros((max_seq_length, max_seq_length))
+                padded_attention[:seq_length, :seq_length] = head_attention.cpu().detach().numpy()
+                
+                sum_attention_maps[label] += padded_attention
+                count_attention_maps[label] += 1
+
+    avg_attention_weights = {label: sum_attention / count_attention_maps[label] for label, sum_attention in sum_attention_maps.items()}
+    
     # visualize avg_attention_weights for each class
-    plt.figure(figsize=(5, 5 * len(avg_attention_weights)))
+    plt.figure(figsize=(5,5))  
 
     cnt = 1
     for key in avg_attention_weights:
@@ -35,10 +71,7 @@ def plotAttention(attention_weights, labels):
         ax.set_title(key)
         cnt += 1
 
-    plt.tight_layout()
     plt.show()
-        
-    return avg_attention_weights
 
 
 def test_plotAttention():
