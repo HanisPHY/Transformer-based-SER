@@ -78,7 +78,7 @@ def plotAttention(attention_weights, labels, encoder):
     max_seq_length = max(att.shape[2] for batch in attention_weights for att in batch)
 
     sum_attention_maps = defaultdict(lambda: np.zeros((max_seq_length, max_seq_length)))
-    count_attention_maps = defaultdict(int)
+    count_attention_maps = defaultdict(lambda: np.zeros((max_seq_length, max_seq_length)))
 
     # (batch_size, num_heads, sequence_length, sequence_length)
     for i, (label, attentions) in enumerate(zip(labels, attention_weights)):
@@ -88,11 +88,12 @@ def plotAttention(attention_weights, labels, encoder):
                     seq_length = att.shape[-1]
                     
                     padded_attention = np.zeros((max_seq_length, max_seq_length))
-                    
                     padded_attention[:seq_length, :seq_length] = att
                     
+                    non_padding_entries = np.ones((max_seq_length, max_seq_length))
+                    
                     sum_attention_maps[label] += padded_attention
-                    count_attention_maps[label] += 1
+                    count_attention_maps[label] += non_padding_entries
 
     avg_attention_weights = {label: sum_attention / count_attention_maps[label] for label, sum_attention in sum_attention_maps.items()}
     
@@ -100,8 +101,8 @@ def plotAttention(attention_weights, labels, encoder):
     print("-" * 50, "Average attention heat map")
     nrows = 4
     ncols = 1
-    fig_width = 10
-    fig_height = nrows * 8
+    fig_width = 6
+    fig_height = nrows * 6
     
     fig, axs = plt.subplots(nrows, ncols, figsize=(fig_width, fig_height))
     
