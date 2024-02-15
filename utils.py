@@ -67,6 +67,24 @@ def report(labels, preds, encoder):
     print(classification_report(labels, preds, labels = encoder.classes_))
     plot_cnf_matrix(cm , encoder.classes_)
 
+def padZero(attention_weights):
+    max_seq_length = max(head.shape[2] for batch in attention_weights for head in batch)
+    padded_attention_weights = []
+    for att_lst in attention_weights:
+        padded_att_lst = []
+        for batch_attention in att_lst:
+            padded_batch_attention = []
+            for head_attention in batch_attention:
+                padded_head_attention = []
+                for att in head_attention:
+                    seq_length = att.shape[-1]
+                    padded_attention = np.zeros((max_seq_length, max_seq_length))
+                    padded_attention[:seq_length, :seq_length] = att
+                    padded_head_attention.append(padded_attention)
+                padded_batch_attention.append(padded_head_attention)
+            padded_att_lst.append(padded_batch_attention)
+        padded_attention_weights.append(padded_att_lst)
+    return padded_attention_weights
     
 # attention_weights: list of attention weights for each sample
 
@@ -75,13 +93,16 @@ def report(labels, preds, encoder):
 def plotAttention(attention_weights, labels, encoder):
     labels = encoder.inverse_transform(labels)
     # Maximum attention map size
-    max_seq_length = max(att.shape[2] for batch in attention_weights for att in batch)
+    max_seq_length = max(head.shape[2] for batch in attention_weights for head in batch)
 
     sum_attention_maps = defaultdict(lambda: np.zeros((max_seq_length, max_seq_length)))
     count_attention_maps = defaultdict(lambda: np.zeros((max_seq_length, max_seq_length)))
+    
+    zeroPadded_attention_weights = padZero(attention_weights)
 
-    # (batch_size, num_heads, sequence_length, sequence_length)
-    for i, (label, attentions) in enumerate(zip(labels, attention_weights)):
+    # (batch_size, num_heads, sequence_length, sequence_length). 
+    # 4 dimensions for each list in attention_weights
+    for i, (label, attentions) in enumerate(zip(labels, zeroPadded_attention_weights)):
         for batch_attention in attentions:
             for head_attention in batch_attention:
                 for att in head_attention:

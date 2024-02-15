@@ -5,41 +5,6 @@ from collections import defaultdict
 
 import torch
 
-
-# def plotAttention(attention_weights, labels):
-#     # Average attention weights for each class
-#     avg_attention_weights = {}
-#     label_cnt = defaultdict(int)
-#     for i, label in enumerate(labels):
-#         label_cnt[label] += 1
-#         label_attention = attention_weights[i]
-        
-#         if avg_attention_weights.get(label) is None:
-#             avg_attention_weights[label] = np.array(np.zeros(label_attention[0][0].shape))
-        
-#         for j in range(len(label_attention)):
-#             for k in range(len(label_attention[j])):
-#                 print("label_attention[j][k].detach().numpy(): ", j, k, label_attention[j][k].detach().numpy())
-#                 avg_attention_weights[label] += label_attention[j][k].detach().numpy()
-                
-#     for key in label_cnt:
-#         avg_attention_weights[key] /= label_cnt[key]
-        
-#     # visualize avg_attention_weights for each class
-#     plt.figure(figsize=(5, 5 * len(avg_attention_weights)))
-
-#     cnt = 1
-#     for key in avg_attention_weights:
-#         ax = plt.subplot(len(avg_attention_weights), 1, cnt)
-#         sns.heatmap(avg_attention_weights[key], cmap='Blues', ax=ax)
-#         ax.set_title(key)
-#         cnt += 1
-
-#     plt.tight_layout()
-#     plt.show()
-        
-#     return avg_attention_weights
-
 def plotAttention(attention_weights, labels):
     # Maximum attention map size            
     max_seq_length = max([att.shape[2] for batch in attention_weights for att in batch])
@@ -72,7 +37,43 @@ def plotAttention(attention_weights, labels):
         cnt += 1
 
     plt.show()
+    
+def padZero(attention_weights):
+    max_seq_length = max(head.shape[2] for batch in attention_weights for head in batch)
+    padded_attention_weights = []
+    for att_lst in attention_weights:
+        padded_att_lst = []
+        for batch_attention in att_lst:
+            padded_batch_attention = []
+            for head_attention in batch_attention:
+                padded_head_attention = []
+                for att in head_attention:
+                    seq_length = att.shape[-1]
+                    padded_attention = np.zeros((max_seq_length, max_seq_length))
+                    padded_attention[:seq_length, :seq_length] = att
+                    padded_head_attention.append(padded_attention)
+                padded_batch_attention.append(padded_head_attention)
+            padded_att_lst.append(padded_batch_attention)
+        padded_attention_weights.append(padded_att_lst)
+        
+    print("padded_attention_weights: ", padded_attention_weights)
+    return padded_attention_weights
 
+def test_padZero():
+    attention_weights = [
+        np.array([[[[0.1], [0.3]], [[0.5], [0.7]]]]),
+        np.array([[[[0.9, 1.0, 1.1], [1.1, 1.2, 1.3], [0.9, 1.0, 1.1]], [[1.3, 1.4, 1.5], [1.5, 1.6, 1.7], [0.9, 1.0, 1.1]]]])
+    ]
+    
+    attention_weights = [torch.from_numpy(attention_weight) for attention_weight in attention_weights]
+    expected_output = [
+        np.array([[[0.1, 0.0, 0.0, 0.0], [0.3, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]], 
+                    [[0.5, 0.0, 0.0, 0.0], [0.7, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]]),
+        np.array([[[0.9, 1.0, 0.0, 0.0], [1.1, 1.2, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]], 
+                    [[1.3, 1.4, 0.0, 0.0], [1.5, 1.6, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]])
+    ]
+    padZero(attention_weights)
+    # assert np.array_equal(padZero(attention_weights), expected_output)
 
 def test_plotAttention():
     # Test case 1
@@ -110,5 +111,7 @@ def test_plotAttention2():
 
     ans = plotAttention(attention_weights, labels)
     
-test_plotAttention()
-test_plotAttention2()
+# test_plotAttention()
+# test_plotAttention2()
+
+test_padZero()
