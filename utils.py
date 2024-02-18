@@ -4,6 +4,7 @@ from IPython.display import clear_output
 import seaborn as sns
 import numpy as np
 import pandas as pd
+from sklearn.manifold import TSNE
 
 from sklearn.metrics import f1_score, classification_report
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
@@ -93,30 +94,10 @@ def padZero(attention_weights):
 def plotAttention(attention_weights, labels, encoder):
     labels = encoder.inverse_transform(labels)
     # Maximum attention map size
-    max_seq_length = max(head.shape[2] for batch in attention_weights for head in batch)
+    max_seq_length = max(att.shape[2] for batch in attention_weights for att in batch)
 
     sum_attention_maps = defaultdict(lambda: np.zeros((max_seq_length, max_seq_length)))
     count_attention_maps = defaultdict(lambda: np.zeros((max_seq_length, max_seq_length)))
-    
-    zeroPadded_attention_weights = padZero(attention_weights)
-
-    # (batch_size, num_heads, sequence_length, sequence_length). 
-    # 4 dimensions for each list in attention_weights
-    for i, (label, attentions) in enumerate(zip(labels, zeroPadded_attention_weights)):
-        for batch_attention in attentions:
-            for head_attention in batch_attention:
-                for att in head_attention:
-                    seq_length = att.shape[-1]
-                    
-                    padded_attention = np.zeros((max_seq_length, max_seq_length))
-                    padded_attention[:seq_length, :seq_length] = att
-                    
-                    non_padding_entries = np.ones((max_seq_length, max_seq_length))
-                    
-                    sum_attention_maps[label] += padded_attention
-                    count_attention_maps[label] += non_padding_entries
-
-    avg_attention_weights = {label: sum_attention / count_attention_maps[label] for label, sum_attention in sum_attention_maps.items()}
     
     # visualize avg_attention_weights for each class
     print("-" * 50, "Average attention heat map")

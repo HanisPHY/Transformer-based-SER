@@ -2,6 +2,8 @@ import seaborn as sns
 from matplotlib import pyplot as plt
 import numpy as np
 from collections import defaultdict
+from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
 
 import torch
 
@@ -38,6 +40,37 @@ def plotAttention(attention_weights, labels):
 
     plt.show()
     
+def plotAttention_pca(attention_weights):
+    zeroPadded_attention_weights = padZero(attention_weights)
+
+    pca = PCA(n_components=2, random_state=42)
+    # X_tsne = tsne.fit_transform(np.concatenate(zeroPadded_attention_weights, axis=0).reshape(-1, zeroPadded_attention_weights[0][0].shape[-1]**2))
+    X_pca = pca.fit_transform(zeroPadded_attention_weights)
+    # print(tsne.kl_divergence_)
+    
+def plotAttention_tsne(attention_weights):
+    zeroPadded_attention_weights = padZero(attention_weights)
+
+    tsne = TSNE(n_components=2, random_state=42)
+    # X_tsne = tsne.fit_transform(np.concatenate(zeroPadded_attention_weights, axis=0).reshape(-1, zeroPadded_attention_weights[0][0].shape[-1]**2))
+    X_tsne = tsne.fit_transform(zeroPadded_attention_weights)
+    print(tsne.kl_divergence_)
+    
+def test_plotAttention_pca_1():
+    attention_weights = [
+        np.array([[[[0.1], [0.3]], [[0.5], [0.7]]]]),
+        np.array([[[[0.9, 1.0, 1.1], [1.1, 1.2, 1.3], [0.9, 1.0, 1.1]], [[1.3, 1.4, 1.5], [1.5, 1.6, 1.7], [0.9, 1.0, 1.1]]]])
+    ]
+    
+    attention_weights = [torch.from_numpy(attention_weight) for attention_weight in attention_weights]
+    expected_output = [
+        np.array([[[0.1, 0.0, 0.0, 0.0], [0.3, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]], 
+                    [[0.5, 0.0, 0.0, 0.0], [0.7, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]]),
+        np.array([[[0.9, 1.0, 0.0, 0.0], [1.1, 1.2, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]], 
+                    [[1.3, 1.4, 0.0, 0.0], [1.5, 1.6, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]])
+    ]
+    plotAttention_pca(attention_weights)    
+
 def padZero(attention_weights):
     max_seq_length = max(head.shape[2] for batch in attention_weights for head in batch)
     padded_attention_weights = []
@@ -51,15 +84,45 @@ def padZero(attention_weights):
                     seq_length = att.shape[-1]
                     padded_attention = np.zeros((max_seq_length, max_seq_length))
                     padded_attention[:seq_length, :seq_length] = att
-                    padded_head_attention.append(padded_attention)
-                padded_batch_attention.append(padded_head_attention)
-            padded_att_lst.append(padded_batch_attention)
-        padded_attention_weights.append(padded_att_lst)
+                    padded_head_attention.append(np.array(padded_attention))
+                padded_batch_attention.append(np.array(padded_head_attention))
+            padded_att_lst.append(np.array(padded_batch_attention))
+        padded_attention_weights.append(np.array(padded_att_lst))
         
     print("padded_attention_weights: ", padded_attention_weights)
-    return padded_attention_weights
+    return np.array(padded_attention_weights)
 
-def test_padZero():
+def test_plotAttention_tsne_1():
+    attention_weights = [
+        np.array([[[[0.1], [0.3]], [[0.5], [0.7]]]]),
+        np.array([[[[0.9, 1.0, 1.1], [1.1, 1.2, 1.3], [0.9, 1.0, 1.1]], [[1.3, 1.4, 1.5], [1.5, 1.6, 1.7], [0.9, 1.0, 1.1]]]])
+    ]
+    
+    attention_weights = [torch.from_numpy(attention_weight) for attention_weight in attention_weights]
+    expected_output = [
+        np.array([[[0.1, 0.0, 0.0, 0.0], [0.3, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]], 
+                    [[0.5, 0.0, 0.0, 0.0], [0.7, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]]),
+        np.array([[[0.9, 1.0, 0.0, 0.0], [1.1, 1.2, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]], 
+                    [[1.3, 1.4, 0.0, 0.0], [1.5, 1.6, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]])
+    ]
+    plotAttention_tsne(attention_weights)
+    
+def test_plotAttention_tsne_2():
+    attention_weights = [
+        np.array([[[[0.1]], [[0.5]]]]),
+        np.array([[[[0.9, 1.0, 1.1], [1.1, 1.2, 1.3], [0.9, 1.0, 1.1]], [[1.3, 1.4, 1.5], [1.5, 1.6, 1.7], [0.9, 1.0, 1.1]]]])
+    ]
+    
+    attention_weights = [torch.from_numpy(attention_weight) for attention_weight in attention_weights]
+    expected_output = [
+        np.array([[[0.1, 0.0, 0.0, 0.0], [0.3, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]], 
+                    [[0.5, 0.0, 0.0, 0.0], [0.7, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]]),
+        np.array([[[0.9, 1.0, 0.0, 0.0], [1.1, 1.2, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]], 
+                    [[1.3, 1.4, 0.0, 0.0], [1.5, 1.6, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]])
+    ]
+    padZero(attention_weights)
+    
+def test_padZero_1():
     attention_weights = [
         np.array([[[[0.1], [0.3]], [[0.5], [0.7]]]]),
         np.array([[[[0.9, 1.0, 1.1], [1.1, 1.2, 1.3], [0.9, 1.0, 1.1]], [[1.3, 1.4, 1.5], [1.5, 1.6, 1.7], [0.9, 1.0, 1.1]]]])
@@ -114,4 +177,9 @@ def test_plotAttention2():
 # test_plotAttention()
 # test_plotAttention2()
 
-test_padZero()
+# test_padZero()
+
+# test_plotAttention_tsne_1()
+# test_plotAttention_tsne_2()
+
+test_plotAttention_pca_1()
