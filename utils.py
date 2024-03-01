@@ -5,6 +5,7 @@ import seaborn as sns
 import numpy as np
 import pandas as pd
 from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
 
 from sklearn.metrics import f1_score, classification_report
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
@@ -69,6 +70,7 @@ def report(labels, preds, encoder):
     plot_cnf_matrix(cm , encoder.classes_)
 
 def padZero(attention_weights):
+    # attention_weights has 6 dimensions: (num_dataloader, __, batch_size, num_heads, sequence_length, sequence_length)
     max_seq_length = max(head.shape[2] for batch in attention_weights for head in batch)
     padded_attention_weights = []
     for att_lst in attention_weights:
@@ -85,7 +87,11 @@ def padZero(attention_weights):
                 padded_batch_attention.append(padded_head_attention)
             padded_att_lst.append(padded_batch_attention)
         padded_attention_weights.append(padded_att_lst)
-    return padded_attention_weights
+        
+    zeroPaddedAttention = np.array(padded_attention_weights)
+    print("Saving array -------------------")
+    saveArray(zeroPaddedAttention, "zeroPaddedAttention.npy")
+    return zeroPaddedAttention
     
 # attention_weights: list of attention weights for each sample
 
@@ -93,27 +99,37 @@ def padZero(attention_weights):
 # Tuple of torch.FloatTensor (one for each layer) of shape (batch_size, num_heads, sequence_length, sequence_length).
 def plotAttention(attention_weights, labels, encoder):
     labels = encoder.inverse_transform(labels)
-    # Maximum attention map size
-    max_seq_length = max(att.shape[2] for batch in attention_weights for att in batch)
+    
+    padded_attention_weights = padZero(attention_weights)
+    
+    # # t-SNE
+    # tsne = TSNE(n_components=2, random_state=42)
+    # # X_tsne = tsne.fit_transform(np.concatenate(zeroPadded_attention_weights, axis=0).reshape(-1, zeroPadded_attention_weights[0][0].shape[-1]**2))
+    # X_tsne = tsne.fit_transform(padded_attention_weights)
+    # print(tsne.kl_divergence_)
+    
+    # PCA
+    #pca = PCA(n_components=2, random_state=42)
+    # X_tsne = tsne.fit_transform(np.concatenate(zeroPadded_attention_weights, axis=0).reshape(-1, zeroPadded_attention_weights[0][0].shape[-1]**2))
+    #X_pca = pca.fit_transform(padded_attention_weights)
+    
+    # avg_attention_weights = {label: sum_attention / count_attention_maps[label] for label, sum_attention in sum_attention_maps.items()}
+    
+    # # visualize avg_attention_weights for each class
+    # print("-" * 50, "Average attention heat map")
+    # nrows = 4
+    # ncols = 1
+    # fig_width = 6
+    # fig_height = nrows * 6
+    
+    # fig, axs = plt.subplots(nrows, ncols, figsize=(fig_width, fig_height))
+    
+    # for ax, (key, data) in zip(axs, avg_attention_weights.items()):
+    #     sns.heatmap(data, cmap='Blues', ax=ax)
+    #     ax.set_title(key)
 
-    sum_attention_maps = defaultdict(lambda: np.zeros((max_seq_length, max_seq_length)))
-    count_attention_maps = defaultdict(lambda: np.zeros((max_seq_length, max_seq_length)))
-    
-    # visualize avg_attention_weights for each class
-    print("-" * 50, "Average attention heat map")
-    nrows = 4
-    ncols = 1
-    fig_width = 6
-    fig_height = nrows * 6
-    
-    fig, axs = plt.subplots(nrows, ncols, figsize=(fig_width, fig_height))
-    
-    for ax, (key, data) in zip(axs, avg_attention_weights.items()):
-        sns.heatmap(data, cmap='Blues', ax=ax)
-        ax.set_title(key)
-
-    plt.tight_layout()
-    plt.show()
+    # plt.tight_layout()
+    # plt.show()
 
 def plot_cnf_matrix(cm , classes):
     print("confusion matrix:")
@@ -127,3 +143,12 @@ def plot_cnf_matrix(cm , classes):
     plt.figure(figsize=(10,10))  
     sns.heatmap(cm_df , annot=True , cmap='Blues', fmt='g')
     plt.show()
+
+# helping method
+def saveArray(array_to_save, file_name):
+    np.save(file_name, array_to_save)
+    print(f"Array saved to {file_name}")
+    
+def loadArray(file_name):
+    print(f"Array loaded from {file_name}")
+    return np.load(file_name)
