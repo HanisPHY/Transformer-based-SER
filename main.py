@@ -75,9 +75,14 @@ def evaluate(model, dataloader, criterion, device, output_attention=False):
     losses, predictions, true_labels, attention_weights = [], [], [], []
 
     for iter, (inputs, labels) in enumerate(dataloader):
+        print(iter, len(dataloader))
+        # if iter == (len(dataloader) // 15):
+        #     print("iter is: ", iter)
+        #     break
         inputs = inputs.to(device)
         # print("Evaluation: The shape of the raw input is: ", inputs.shape)
         labels = labels.to(device)
+        print("labels are: ", labels)
 
         outputs, atten_weight = model(inputs, output_attention=output_attention)
         # print("atten_weight: ", atten_weight)
@@ -98,7 +103,9 @@ def trainModel(data_path, check_point, lr, epocks, weight_decay, sch_gamma, sch_
 
     # load data
     df, label_encoder = load_data(data_path)
-    print(df)
+    labels = df['label'].values
+    print("dataframe is ", df)
+    print("labels are: ", labels)
     
     class_distribution = df['label'].value_counts()
     print("Class distribution in the full dataset:")

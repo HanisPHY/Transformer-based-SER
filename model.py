@@ -41,6 +41,8 @@ class ModelForClf(nn.Module):
         
         if output_attention:
             attention_weight = outputs.attentions
+            # print("shape of attention_weight", attention_weight.shape)
+            # print("len(attention_weight[0]) is: ", len(attention_weight[0]))
         
         return logits, attention_weight
 
